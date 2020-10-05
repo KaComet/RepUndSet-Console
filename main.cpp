@@ -1,8 +1,10 @@
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <stdexcept>
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <optional>
@@ -20,6 +22,20 @@ void printSet(CharacterSet &characterSet, StudentSet &studentSet, unsigned int t
 void clearTerm();
 
 void settingMenu(CharacterSet &characterSet, StudentSet &studentSet, const std::string &studentFileName);
+
+template<class T>
+void uniqueAddToVector(std::vector<T> &vector, T &element) {
+    bool notFound = true;
+    for (auto i : vector) {
+        if (i == element) {
+            notFound = false;
+            break;
+        }
+    }
+
+    if (notFound)
+        vector.push_back(element);
+}
 
 int main(int argc, char **argv) {
     if (argc != 3) {
@@ -123,30 +139,47 @@ bool quiz(CharacterSet &characterSet, StudentSet &studentSet, unsigned int nChar
         }
     }
 
-    std::cout << "Translate the following:\n";
+    bool hasCorrectlyAnswered = false;
 
-    for (auto &i : questionData)
-        std::cout << i.character;
+    while (!hasCorrectlyAnswered) {
+        std::vector<Character> wrongAnswers;
 
-    std::cout << '\n';
+        std::cout << "Translate the following:\n";
 
-    bool passed = true;
-    for (auto &i : questionData) {
-        std::string tmp;
-        std::cin >> tmp;
-        if (tmp == exitString)
-            return false;
+        for (auto &i : questionData)
+            std::cout << i.character;
 
-        if (tmp != i.latinSound)
-            passed = false;
+        std::cout << '\n';
+
+        bool passed = true;
+        for (auto &i : questionData) {
+            std::string tmp;
+            std::cin >> tmp;
+            if (tmp == exitString) {
+                std::cout << "\n\n";
+                return false;
+            }
+
+            if (tmp != i.latinSound) {
+                uniqueAddToVector<Character>(wrongAnswers, i);
+                passed = false;
+            }
+        }
+
+        if (passed) {
+            std::cout << "Correct!\n";
+            hasCorrectlyAnswered = true;
+        } else {
+            std::cout << "Incorrect.\n\n";
+            for (Character c : wrongAnswers)
+                std::cout << c.character << ": " << c.latinSound << '\n';
+            std::cout << '\n';
+            std::shuffle(questionData.begin(), questionData.end(), std::mt19937(std::random_device()()));
+            continue;
+        }
+
+        std::cout << "\n\n";
     }
-
-    if (passed)
-        std::cout << "Correct!\n";
-    else
-        std::cout << "Incorrect.\n";
-
-    std::cout << "\n\n";
 
     return true;
 }

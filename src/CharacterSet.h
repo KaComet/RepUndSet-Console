@@ -8,6 +8,10 @@
 
 struct Character {
     std::string character, latinSound;
+
+    bool operator==(const Character &b) const {
+        return (b.latinSound == latinSound) && (b.character == character);
+    }
 };
 
 class CharacterSet {
