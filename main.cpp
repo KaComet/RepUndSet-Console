@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <ctime>
+#include <optional>
 #include "src/StudentSet.h"
 #include "src/CharacterSet.h"
 
@@ -22,20 +23,35 @@ void settingMenu(CharacterSet &characterSet, StudentSet &studentSet, const std::
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        std::cout << "Invalid input(s).\nExample usage: RepUndSet {Language File} {Student File}\n";
+        std::cout << "Invalid input(s).\nExample usage: RepUndSet-Console {Language File} {Student File}\n";
         exit(1);
     }
+
     std::string languageFilePath(argv[1]);
     std::string studentFilePath(argv[2]);
 
-    CharacterSet languageSet(languageFilePath);
-    StudentSet student(languageSet.length(), studentFilePath);
+    std::optional<CharacterSet> languageSet = std::nullopt;
+    std::optional<StudentSet> student = std::nullopt;
+
+    try {
+        languageSet = CharacterSet(languageFilePath);
+    } catch (std::runtime_error &e) {
+        std::cout << "Could not load character set. Exiting...\n";
+        exit(1);
+    }
+
+    try {
+        student = StudentSet(languageSet.value().length(), studentFilePath);
+    } catch (std::runtime_error &e) {
+        std::cout << "Could not load student file. Exiting...\n";
+        exit(1);
+    }
 
     bool hasExited = false;
     std::srand(time(nullptr));
 
     while (!hasExited) {
-        std::cout << "-- RepUndSet\n"
+        std::cout << "-- RepUndSet-Console\n"
                   << "-- 1) Begin Quizzing\n"
                   << "-- 2) Settings\n"
                   << "-- 3) Quit\n"
@@ -56,11 +72,11 @@ int main(int argc, char **argv) {
 
         switch (selection) {
             case 1:
-                runQuizes(languageSet, student);
+                runQuizes(languageSet.value(), student.value());
                 continue;
                 break;
             case 2:
-                settingMenu(languageSet, student, studentFilePath);
+                settingMenu(languageSet.value(), student.value(), studentFilePath);
                 continue;
                 break;
             case 3:
@@ -158,7 +174,7 @@ void settingMenu(CharacterSet &characterSet, StudentSet &studentSet, const std::
     bool hasExited = false;
 
     while (!hasExited) {
-        printSet(characterSet, studentSet, 7);
+        printSet(characterSet, studentSet, 5);
 
         std::string tmp;
         std::cout << "\nWhat character do want to enable/disable?\nCharacter number: ";
@@ -186,8 +202,14 @@ void settingMenu(CharacterSet &characterSet, StudentSet &studentSet, const std::
             hasExited = true;
             continue;
         }
+        unsigned int i;
 
-        unsigned int i = std::stoi(tmp);
+        try {
+            i = std::stoi(tmp);
+        } catch (std::invalid_argument &e) {
+            continue;
+        }
+
         if (i >= characterSet.length()) {
             std::cout << "Not a valid character.\n\n";
             continue;
